@@ -21,7 +21,7 @@ import { JwtModule } from './jwt/jwt.module';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
-        SECRET_KEY: Joi.string().required()
+        PRIVATE_KEY: Joi.string().required()
       })
     }),
     TypeOrmModule.forRoot({
@@ -38,9 +38,11 @@ import { JwtModule } from './jwt/jwt.module';
     GraphQLModule.forRoot({
       autoSchemaFile: true,
     }),
+    JwtModule.forRoot({
+      privatekey: process.env.PRIVATE_KEY
+    }),
     UsersModule,
     CommonModule,
-    JwtModule,
   ],
   controllers: [],
   providers: [],
