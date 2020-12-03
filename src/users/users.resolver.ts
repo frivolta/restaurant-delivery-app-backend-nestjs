@@ -18,22 +18,12 @@ export class UsersResolver{
 
   @Mutation(returns => CreateAccountOutput)
   async createAccount(@Args("input") createAccountInput: CreateAccountInput):Promise<CreateAccountOutput> {
-    try {
-      const { ok, error } = await this.userService.createAccount(createAccountInput)
-      return {ok, error}
-    } catch(error) {
-      return {ok: false, error}
-    }
+      return this.userService.createAccount(createAccountInput)
   }
 
   @Mutation(returns => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    try {
-      const { ok, error, token } = await this.userService.login(loginInput)
-      return {ok, error, token}
-    } catch (error) {
-      return {ok: false, error}
-    }
+    return this.userService.login(loginInput)
   }
 
   @Query(returns => User)
@@ -45,38 +35,17 @@ export class UsersResolver{
   @UseGuards(AuthGuard)
   @Query(returns => UserProfileOutput)
   async userProfile(@Args() userProfileInput: UserProfileInput): Promise<UserProfileOutput> {
-    try {
-      const user = await this.userService.findById(userProfileInput.userId)
-      if (!user) {
-        throw Error()
-      }
-      return {ok: true, user}
-    } catch (err) {
-      console.log(err)
-      return {ok: false, error: "User not found"}
-    }
+   return this.userService.findById(userProfileInput.userId)
   }
   
   @UseGuards(AuthGuard)
   @Mutation(returns => EditProfileOutput)
   async editProfile(@AuthUser() authUser:User, @Args('input') editProfileInput: EditProfileInput): Promise<EditProfileOutput>{
-    try {
-      await this.userService.editProfile(authUser.id, editProfileInput)
-      return {ok: true}
-    } catch (error) {
-      return{ ok: false, error}
-    }
+    return this.userService.editProfile(authUser.id, editProfileInput)
   }
 
   @Mutation(returns => VerifyEmailOutput)
   async verifyEmail(@Args('input') verifyEmailInput: VerifyEmailInput): Promise<VerifyEmailOutput> {
-    try {
-      await this.userService.verifyEmail(verifyEmailInput.code)
-      return{ok: true}
-    }
-    catch (error) {
-      console.log(error)
-      return{ok: false, error}
-    }
+    return this.userService.verifyEmail(verifyEmailInput.code)
   }
 }
