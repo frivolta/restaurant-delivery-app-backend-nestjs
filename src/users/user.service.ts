@@ -70,6 +70,7 @@ export class UsersService {
       if (email) {
         user.email = email
         user.verified = false
+        await this.verification.delete({ user: { id: user.id } });
         await this.verification.save(this.verification.create({ user }))
       }
       if (password) {
