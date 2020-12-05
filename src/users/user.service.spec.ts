@@ -148,7 +148,105 @@ describe("UserService", () => {
     })
   })
 
-it.todo('findById')
-it.todo('editProfile')
-it.todo('verifyEmail')
+  describe('findById', () => {
+    const findByIdArgs = { id:1}
+    it('should find an existing user', async() => {
+      usersRepository.findOneOrFail.mockResolvedValue(findByIdArgs)
+      const result = await service.findById(1)
+      expect(result).toEqual({ok: true,user:{id:1}})
+    })
+    
+    it('should fail if no user is found', async() => {
+      usersRepository.findOneOrFail.mockRejectedValue(new Error)
+      const result = await service.findById(1)
+      expect(result).toEqual({ok: false, error: "User not found"})
+    })
+})
+  describe('edit profile', () => {
+    it('should change email', async () => {
+      const oldUser = { email: "bs@old.com", verified: true }
+      const editProfileArgs = { userId: 1, input: { email: "bs@new.com" } }
+      const newVerification = { code: "code" }
+      const newUser = { 
+        verified: false, email:editProfileArgs.input.email
+      }
+      
+
+      
+      usersRepository.findOne.mockResolvedValue(oldUser)
+      verificationsRepository.create.mockReturnValue(newVerification)
+      verificationsRepository.save.mockResolvedValue(newVerification)
+
+      await service.editProfile(editProfileArgs.userId, editProfileArgs.input)
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1)
+      expect(usersRepository.findOne).toHaveBeenCalledWith(editProfileArgs.userId)
+      
+      expect(verificationsRepository.create).toHaveBeenCalledWith({user: newUser})
+      expect(verificationsRepository.save).toHaveBeenCalledWith(newVerification)
+
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(newUser.email, newVerification.code)
+    })
+
+    it('should change password', async () => {
+      const editProfileArgs = {
+        userId: 1,
+        input: { password: 'new.password' },
+      };
+      usersRepository.findOne.mockResolvedValue({ password: 'old' });
+      const result = await service.editProfile(
+        editProfileArgs.userId,
+        editProfileArgs.input,
+      );
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith(editProfileArgs.input);
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on exception', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.editProfile(1, { email: '12' });
+      expect(result).toEqual({ ok: false, error: 'Could not update profile.' });
+    });
+  })
+  describe('verifyEmail', () => {
+    it('should verify email', async () => {
+      const mockedVerification = {
+        user: {
+          verified: false,
+        },
+        id: 1,
+      };
+      verificationsRepository.findOne.mockResolvedValue(mockedVerification);
+
+      const result = await service.verifyEmail('');
+
+      expect(verificationsRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.findOne).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.any(Object),
+      );
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith({ verified: true });
+
+      expect(verificationsRepository.delete).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.delete).toHaveBeenCalledWith(
+        mockedVerification.id,
+      );
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on verification not found', async () => {
+      verificationsRepository.findOne.mockResolvedValue(undefined);
+      const result = await service.verifyEmail('');
+      expect(result).toEqual({ok: false, error: "Verification code not valid"});
+    });
+
+    it('should fail on exception', async () => {
+      verificationsRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.verifyEmail('');
+      expect(result).toEqual({ ok: false, error: 'Could not verify email.' });
+    });
+  });
 })

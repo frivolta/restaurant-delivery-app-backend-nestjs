@@ -57,12 +57,11 @@ export class UsersService {
 
   async findById(id: number): Promise<UserProfileOutput>{
     try {
-      const user = await this.users.findOne({ id })
+      const user = await this.users.findOneOrFail({ id })
       if (user) {
         return {ok: true, user}
       }
     } catch (error) {
-      console.log(error)
       return {ok: false, error: "User not found"}
     }
   }
@@ -83,8 +82,7 @@ export class UsersService {
       await this.users.save(user)
       return {ok: true}
     } catch (error) {
-      console.log(error)
-      return{ ok: false, error}
+      return{ ok: false, error: "Could not update profile."}
     }
   }
 
@@ -93,12 +91,12 @@ export class UsersService {
     if (verification) {
       verification.user.verified = true;
       await this.users.save(verification.user)
+      await this.verification.delete(verification.id);
       return{ok: true}
     }
       return {ok: false, error: "Verification code not valid"}
     } catch (error) {
-      console.log(error)
-      return {ok: false, error}
+      return { ok: false, error: 'Could not verify email.' }
     }
   }
 }
