@@ -11,14 +11,19 @@ export class Category extends CoreEntity{
   
   @Field(type => String)
   @IsString()
-  @Column()
+  @Column({unique: true})
   name: string
 
   @Field(type => String)
   @IsString()
-  @Column()
+  @Column({nullable: true})
   coverImage: string
 
+  @Field(type => String)
+  @IsString()
+  @Column({ unique: true })
+  slug: string
+    
   @Field(type => [Restaurant])
   @OneToMany(type => Restaurant, restaurant=>restaurant.category)
   restaurants: Restaurant[];
