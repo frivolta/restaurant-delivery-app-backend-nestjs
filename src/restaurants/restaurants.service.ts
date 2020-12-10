@@ -4,6 +4,7 @@ import { EditProfileOutput } from "src/users/dtos/edit-profile.dto";
 import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { AllCategoriesOutput } from "./dtos/all-categories.dto";
+import { CategoryInput, CategoryOutput } from "./dtos/category.dto";
 import { CreateRestaurantInput, CreateRestaurantOutput } from "./dtos/create-restaurant.dto";
 import { DeleteRestaurantInput, DeleteRestaurantOutput } from "./dtos/delete-restaurant.dto";
 import { EditRestaurantInput } from "./dtos/edit-restaurant.dto";
@@ -91,5 +92,20 @@ export class RestaurantService {
 
   async countRestaurants(category: Category): Promise<number>{
     return this.restaurants.count({category})
+  }
+
+  async findCategoryBySlug({ slug, page }: CategoryInput): Promise<CategoryOutput>{
+    try {
+      const category = await this.categories.findOne({ slug })
+      if (!category) {
+        return { ok: false, error: "Category not found"}
+      }
+      const restaurants = await this.restaurants.find({ where: { category }, take: 25, skip: (page - 1) * 25 });
+      const totalRestaurants = await this.countRestaurants(category)
+      category.restaurants = restaurants
+      return { ok: true, category, totalPages: Math.ceil(totalRestaurants/25)}
+    } catch {
+      return { ok: false, error: "Could not get category"}
+    }
   }
 }
