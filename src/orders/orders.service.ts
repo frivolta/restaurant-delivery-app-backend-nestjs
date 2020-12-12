@@ -22,21 +22,47 @@ export class OrderService {
   ) { }
 
   async createOrder(customer: User, createOrderInput: CreateOrderInput): Promise<CreateOrderOutput>{
-    const restaurant = await this.restaurants.findOne(createOrderInput.restaurantId)
+    try {
+      const restaurant = await this.restaurants.findOne(createOrderInput.restaurantId)
     if (!restaurant) {
       return{ok: false, error:"Restaurant not found"}
     }
-    createOrderInput.items.forEach(async item => {
+
+    let orderFinalPrice = 0;
+    const orderItems: OrderItem[] =[]
+    for(const item of createOrderInput.items) {
       const dish = await this.dishes.findOne(item.dishId)
       if (!dish) {
-        //abort
+        return {ok: false, error: "Dish not found"}
       }
-      await this.orderItems.save(this.orderItems.create({dish, options: item.options}))
-    })
-    /*  const order = await this.orders.save(this.orders.create({
+
+      let dishFinalPrice = dish.price;
+      for (const itemOption of item.options) {
+        const dishOption = dish.options.find(dishOption => dishOption.name === itemOption.name)
+        if (dishOption) {
+          if (dishOption.extra) {
+            dishFinalPrice = dishFinalPrice+dishOption.extra
+          } else {
+            const dishOptionChoice = dishOption.choices.find(optionChoice => optionChoice.name === itemOption.choice)
+            if (dishOptionChoice.extra) {
+              dishFinalPrice = dishFinalPrice+dishOptionChoice.extra
+            }
+          }
+        }
+      }
+      orderFinalPrice = orderFinalPrice + dishFinalPrice;
+      const orderItem = await this.orderItems.save(this.orderItems.create({ dish, options: item.options }))
+      orderItems.push(orderItem)
+    }
+     await this.orders.save(this.orders.create({
       customer,
       restaurant,
-      total: 20
-    })) */
+      total: orderFinalPrice,
+      items: orderItems
+    })) 
+    return {ok: true}
+    } catch {
+      return { ok: false, error:"Cannot create order"}
+    }
   }
 }
