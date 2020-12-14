@@ -3,12 +3,13 @@ import { Args, Mutation, Query, Resolver, Subscription } from "@nestjs/graphql";
 import { PubSub } from "graphql-subscriptions/dist/pubsub";
 import { AuthUser } from "src/auth/auth-user.decorator";
 import { Role } from "src/auth/role.decorator";
-import { NEW_PENDING_ORDER, PUBSUB } from "src/common/common.costants";
+import { NEW_COOKED_ORDER, NEW_ORDER_UPDATE, NEW_PENDING_ORDER, PUBSUB } from "src/common/common.costants";
 import { User } from "src/users/entities/user.entity";
 import { CreateOrderInput, CreateOrderOutput } from "./dto/create-order.dto";
 import { EditOrderInput, EditOrderOutput } from "./dto/edit-order.dto";
 import { GetOrderInput, GetOrderOutput } from "./dto/get-order.dto";
 import { GetOrdersInput, GetOrdersOutput } from "./dto/get-orders.dto";
+import { OrderUpdatesInput } from "./dto/order-updates.dto";
 import { Order } from "./enitities/order.entity";
 import { OrderService } from "./orders.service";
 
@@ -58,4 +59,26 @@ export class OrderResolver{
     return this.pubsub.asyncIterator(NEW_PENDING_ORDER)
   }
 
+  @Subscription(returns => Order)
+  @Role(["Delivery"])
+  cookedOrders() {
+    return this.pubsub.asyncIterator(NEW_COOKED_ORDER)
+  }
+
+  @Subscription(returns => Order, { 
+    filter: ({ orderUpdates }: { orderUpdates: Order }, { input }: { input: OrderUpdatesInput }, { user }: { user: User }) => {
+      if (orderUpdates.driverId !== user.id && orderUpdates.customerId !== user.id && orderUpdates.restaurant.ownerId === user.id) {
+        return false
+      }
+      return orderUpdates.id === input.id
+    }
+  })
+  @Role(["Any"])
+  orderUpdates(
+    @Args('input')
+    orderUpdatesInput: OrderUpdatesInput
+  ) {
+    return this.pubsub.asyncIterator(NEW_ORDER_UPDATE)
+    
+  }
 }
