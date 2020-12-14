@@ -11,6 +11,7 @@ import { CreateOrderInput, CreateOrderOutput } from "./dto/create-order.dto";
 import { EditOrderInput, EditOrderOutput } from "./dto/edit-order.dto";
 import { GetOrderInput, GetOrderOutput } from "./dto/get-order.dto";
 import { GetOrdersInput, GetOrdersOutput } from "./dto/get-orders.dto";
+import { TakeOrderInput, TakeOrderOutput } from "./dto/take-order.dto";
 import { OrderItem } from "./enitities/order-item.entity";
 import { Order, OrderStatus } from "./enitities/order.entity";
 
@@ -165,5 +166,19 @@ export class OrderService {
    } catch {
      return{ok: false, error:"Cannot edit order"}
    }
+  }
+
+  async takeOrder(driver: User, {id: orderId}: TakeOrderInput): Promise<TakeOrderOutput>{
+    try{const order = await this.orders.findOne(orderId)
+    if (!order) {
+      return {ok: false, error: "Order not found"}
+    }
+
+    await this.orders.save({ id: orderId, driver })
+    await this.pubsub.publish(NEW_ORDER_UPDATE, { orderUpdates: { ...order, driver } })
+      return { ok: true }
+    } catch {
+      return { ok: false, error:"Could not update order"}
+    }
   }
 }
