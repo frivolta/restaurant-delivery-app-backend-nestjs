@@ -91,7 +91,7 @@ export class RestaurantService {
 
   async allRestaurants({page}: RestaurantsInput): Promise<RestaurantsOutput>{
     try {
-      const [restaurants, totalResults] = await this.restaurants.findAndCount({ skip: (page - 1) * 25, take: 25 })
+      const [restaurants, totalResults] = await this.restaurants.findAndCount({ skip: (page - 1) * 25, take: 25, order:{isPromoted:"DESC"} })
       return { ok: true, results: restaurants, totalPages: Math.ceil(totalResults/25), totalResults}
     } catch {
       return { ok: false, error: "Could not get restaurants"}
@@ -147,7 +147,7 @@ export class RestaurantService {
       if (!category) {
         return { ok: false, error: "Category not found"}
       }
-      const restaurants = await this.restaurants.find({ where: { category }, take: 25, skip: (page - 1) * 25 });
+      const restaurants = await this.restaurants.find({ where: { category }, take: 25, skip: (page - 1) * 25, order:{isPromoted:"DESC"} });
       const totalRestaurants = await this.countRestaurants(category)
       category.restaurants = restaurants
       return { ok: true, category, totalPages: Math.ceil(totalRestaurants/25)}
