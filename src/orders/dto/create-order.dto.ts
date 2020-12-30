@@ -21,4 +21,7 @@ export class CreateOrderInput{
 }
 
 @ObjectType()
-export class CreateOrderOutput extends MutationOutput{}
+export class CreateOrderOutput extends MutationOutput{
+  @Field(type =>Int, { nullable: true})
+  orderId?: number;
+}
