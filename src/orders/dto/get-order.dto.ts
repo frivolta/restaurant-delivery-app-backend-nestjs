@@ -2,7 +2,7 @@ import { Field, InputType, ObjectType, PickType } from "@nestjs/graphql";
 import { MutationOutput } from "src/common/dtos/output.dto";
 import { Order } from "../enitities/order.entity";
 
-@InputType("number")
+@InputType()
 export class GetOrderInput extends PickType(Order, ['id']) {
 }
 
