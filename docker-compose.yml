@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  server:
+    container_name: codelivery-be-dev
+    image: codelivery-be
+    build:
+      context: .
+      target: development
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - postgres
+    command: sh -c "npm run migration:run && npm run start:dev"
+    ports:
+      - 4001:4000
+      - 9229:9229
+    networks:
+      - nesjs-network
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: codelivery-be
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+networks:
+  nesjs-network:

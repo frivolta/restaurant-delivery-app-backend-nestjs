@@ -57,3 +57,5 @@ src/app/homepage/pages/**/*.html
 .env
 .env.test
 .env.dev
+
+postgres-data

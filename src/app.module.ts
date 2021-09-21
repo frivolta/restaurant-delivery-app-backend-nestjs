@@ -42,16 +42,29 @@ import { UploadsModule } from './uploads/uploads.module';
         MAILGUN_FROM_EMAIL:Joi.string().required()
       })
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User, Verification, Restaurant, Category, Dish, Order, OrderItem, Payment],
-      logging: process.env.NODE_ENV !=='prod' && process.env.NODE_ENV!=='test',
-      synchronize: process.env.NODE_ENV !== "prod",
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        type: 'postgres',
+        ...(process.env.DATABASE_URL
+          ? { url: process.env.DATABASE_URL }
+          : {
+              host: process.env.DB_HOST,
+              port: +process.env.DB_PORT,
+              username: process.env.DB_USERNAME,
+              password: process.env.DB_PASSWORD,
+              database: process.env.DB_NAME,
+            }),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        migrations: ['migration/**/*{.ts,.js}'],
+        migrationsTableName: 'migrations_typeorm',
+        synchronize: false,
+        cli: {
+          migrationsDir: 'migration',
+        },
+
+        logging:
+          process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
+      }),
     }),
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,
